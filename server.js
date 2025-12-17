@@ -52,7 +52,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.get('/payment/callback', (req, res) => {
     // Redirect to local frontend with query parameters. Ensure this matches your ngrok or local url.
     const queryString = new URLSearchParams(req.query).toString();
-    res.redirect(`https://2e9cce608f95.ngrok-free.app/payment/callback?${queryString}`);
+    res.redirect(`https://harris-backend.onrender.com/payment/callback?${queryString}`);
 });
 
 app.get('/', (req, res) => {
