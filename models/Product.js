@@ -12,7 +12,13 @@ const ProductSchema = new mongoose.Schema({
     },
     image: String,
     category: { type: String, required: true },
-    isBestSeller: { type: Boolean, default: false }
+    isBestSeller: { type: Boolean, default: false },
+    isAvailable: { type: Boolean, default: true },
+    extras: [{
+        name: { type: String, required: true },
+        price: { type: Number, default: 500 },
+        isAvailable: { type: Boolean, default: true }
+    }]
 });
 
 module.exports = mongoose.model('Product', ProductSchema);

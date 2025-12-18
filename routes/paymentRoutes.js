@@ -14,7 +14,7 @@ router.post('/initialize', async (req, res) => {
         email: email,
         amount: Math.round(amount * 100), // Naira to Kobo (rounded for safety)
         // callback_url: "http://localhost:5173/payment/callback" // Localhost
-        callback_url: "https://harris-backend.onrender.com/payment/callback" // Ngrok/Public URL
+        callback_url: "https://harris-backend.onrender.com/payment/callback" // Hosted backend callback handler
     });
 
     const options = {
