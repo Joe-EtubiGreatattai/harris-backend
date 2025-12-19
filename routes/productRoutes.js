@@ -30,10 +30,10 @@ router.post('/upload', upload.single('image'), (req, res) => {
     res.json({ url: fileUrl });
 });
 
-// Helper to emit update
-const emitProductUpdate = (req, product) => {
+// Helper to emit product events
+const emitProductEvent = (req, eventType, product) => {
     const io = req.app.get('socketio');
-    if (io) io.emit('productUpdated', product);
+    if (io) io.emit(eventType, product);
 };
 
 // Get All Products
@@ -66,7 +66,7 @@ router.post('/', async (req, res) => {
     const product = new Product(req.body);
     try {
         const newProduct = await product.save();
-        emitProductUpdate(req, newProduct);
+        emitProductEvent(req, 'productCreated', newProduct);
         res.status(201).json(newProduct);
     } catch (err) {
         res.status(400).json({ message: err.message });
@@ -82,7 +82,7 @@ router.patch('/:id', async (req, res) => {
             { new: true }
         );
         if (updatedProduct) {
-            emitProductUpdate(req, updatedProduct);
+            emitProductEvent(req, 'productUpdated', updatedProduct);
         }
         res.json(updatedProduct);
     } catch (err) {
@@ -93,7 +93,10 @@ router.patch('/:id', async (req, res) => {
 // Delete Product (Admin)
 router.delete('/:id', async (req, res) => {
     try {
-        await Product.findOneAndDelete({ id: req.params.id });
+        const deletedProduct = await Product.findOneAndDelete({ id: req.params.id });
+        if (deletedProduct) {
+            emitProductEvent(req, 'productDeleted', { id: req.params.id });
+        }
         res.json({ message: 'Product deleted' });
     } catch (err) {
         res.status(500).json({ message: err.message });
