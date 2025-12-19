@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const Rider = require('../models/Rider');
+const PushSubscription = require('../models/PushSubscription');
+const webpush = require('web-push');
 const { updateBestSellers } = require('../services/rankingService');
 
 // Create New Order
@@ -97,6 +99,25 @@ router.patch('/:id/status', async (req, res) => {
             if (io && updatedRider) {
                 io.emit('riderUpdated', updatedRider);
             }
+        }
+
+        // Send Push Notification
+        const userEmail = updatedOrder.user.email;
+        const subscriptionDoc = await PushSubscription.findOne({ email: userEmail });
+
+        if (subscriptionDoc) {
+            const payload = JSON.stringify({
+                title: 'Order Update',
+                body: `Your order status is now: ${status}`,
+                icon: 'https://res.cloudinary.com/doefjylyu/image/upload/v1766070489/Screenshot_2025-12-18_at_4.06.53_pm_meuhxb.png',
+                data: {
+                    orderId: updatedOrder.orderId,
+                    url: `https://harris-frontend-kkg4.vercel.app/tracking`
+                }
+            });
+
+            webpush.sendNotification(subscriptionDoc.subscription, payload)
+                .catch(err => console.error('Error sending push notification:', err));
         }
 
         res.json(updatedOrder);

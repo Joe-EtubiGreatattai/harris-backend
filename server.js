@@ -62,6 +62,7 @@ const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 const { updateBestSellers } = require('./services/rankingService');
 
 app.use('/api/products', productRoutes);
@@ -70,6 +71,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/settings', settingsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/payment/callback', (req, res) => {
     // Redirect to frontend with query parameters
