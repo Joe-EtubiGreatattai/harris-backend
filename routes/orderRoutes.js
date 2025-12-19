@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const Rider = require('../models/Rider');
+const { updateBestSellers } = require('../services/rankingService');
 
 // Create New Order
 router.post('/', async (req, res) => {
@@ -18,6 +19,9 @@ router.post('/', async (req, res) => {
 
         const newOrder = new Order(orderData);
         const savedOrder = await (await newOrder.save()).populate('assignedRider');
+
+        // Background update of best sellers
+        updateBestSellers();
 
         // Emit socket event
         const io = req.app.get('socketio');

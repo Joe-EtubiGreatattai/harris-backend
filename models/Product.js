@@ -1,18 +1,20 @@
 const mongoose = require('mongoose');
 
 const ProductSchema = new mongoose.Schema({
-    id: { type: String, required: true, unique: true }, // Keeping string ID to match frontend data
+    id: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     description: String,
+    // Flexible sizes: e.g., { "S": 5000, "M": 7500 }
     prices: {
-        S: { type: Number, required: true },
-        M: { type: Number, required: true },
-        L: { type: Number, required: true },
-        XL: { type: Number, required: true }
+        type: Map,
+        of: Number,
+        required: true
     },
     image: String,
     category: { type: String, required: true },
-    isBestSeller: { type: Boolean, default: false },
+    isManualBestSeller: { type: Boolean, default: false },
+    isAutomatedBestSeller: { type: Boolean, default: false },
+    salesCount: { type: Number, default: 0 },
     isAvailable: { type: Boolean, default: true },
     extras: [{
         name: { type: String, required: true },
@@ -20,5 +22,13 @@ const ProductSchema = new mongoose.Schema({
         isAvailable: { type: Boolean, default: true }
     }]
 });
+
+// Virtual for backward compatibility or general UI check
+ProductSchema.virtual('isBestSeller').get(function () {
+    return this.isManualBestSeller || this.isAutomatedBestSeller;
+});
+
+ProductSchema.set('toJSON', { virtuals: true });
+ProductSchema.set('toObject', { virtuals: true });
 
 module.exports = mongoose.model('Product', ProductSchema);

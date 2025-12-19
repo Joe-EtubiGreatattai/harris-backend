@@ -29,7 +29,10 @@ app.set('socketio', io);
 const MONGO_URI = process.env.MONGO_URI;
 
 mongoose.connect(MONGO_URI)
-    .then(() => console.log('MongoDB Connected'))
+    .then(() => {
+        console.log('MongoDB Connected');
+        updateBestSellers(); // Initial ranking on startup
+    })
     .catch(err => console.log('MongoDB Connection Error:', err));
 
 // Socket.IO Connection Handler
@@ -59,6 +62,7 @@ const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const { updateBestSellers } = require('./services/rankingService');
 
 app.use('/api/products', productRoutes);
 app.use('/api/riders', require('./routes/riderRoutes'));
