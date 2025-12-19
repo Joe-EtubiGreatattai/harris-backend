@@ -72,6 +72,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/settings', settingsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/ratings', require('./routes/ratingRoutes'));
 
 app.get('/payment/callback', (req, res) => {
     // Redirect to frontend with query parameters
