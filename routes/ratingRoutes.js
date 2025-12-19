@@ -20,6 +20,12 @@ router.post('/', async (req, res) => {
 
         const savedRating = await newRating.save();
 
+        // Emit socket event
+        const io = req.app.get('socketio');
+        if (io) {
+            io.emit('ratingCreated', savedRating);
+        }
+
         res.status(201).json(savedRating);
     } catch (error) {
         console.error('Error creating rating:', error);

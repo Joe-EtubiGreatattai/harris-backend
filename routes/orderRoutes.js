@@ -61,11 +61,12 @@ router.get('/', async (req, res) => {
 // Update Order Status
 router.patch('/:id/status', async (req, res) => {
     try {
-        const { status } = req.body;
+        const { status, source } = req.body;
         const updateData = { status };
 
         if (status === 'Delivered') {
             updateData.deliveredAt = new Date();
+            updateData.deliveredBy = source || 'Admin';
         }
 
         // Use findOneAndUpdate with orderId (our custom ID) or _id
