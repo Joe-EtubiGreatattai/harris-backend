@@ -62,18 +62,24 @@ router.get('/', async (req, res) => {
 router.patch('/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
+        const updateData = { status };
+
+        if (status === 'Delivered') {
+            updateData.deliveredAt = new Date();
+        }
+
         // Use findOneAndUpdate with orderId (our custom ID) or _id
         // Try finding by custom orderId first, then fallback to _id if standard mongo ID
         let updatedOrder = await Order.findOneAndUpdate(
             { orderId: req.params.id },
-            { status },
+            updateData,
             { new: true }
         ).populate('assignedRider');
 
         if (!updatedOrder) {
             updatedOrder = await Order.findByIdAndUpdate(
                 req.params.id,
-                { status },
+                updateData,
                 { new: true }
             ).populate('assignedRider');
         }
