@@ -27,4 +27,15 @@ router.post('/', async (req, res) => {
     }
 });
 
+// GET /api/ratings
+router.get('/', async (req, res) => {
+    try {
+        const ratings = await Rating.find().sort({ createdAt: -1 });
+        res.json(ratings);
+    } catch (error) {
+        console.error('Error fetching ratings:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
 module.exports = router;
