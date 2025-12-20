@@ -41,6 +41,8 @@ router.post('/', async (req, res) => {
     try {
         const promo = new PromoCode(req.body);
         const newPromo = await promo.save();
+        const io = req.app.get('socketio');
+        if (io) io.emit('promoCreated', newPromo);
         res.status(201).json(newPromo);
     } catch (err) {
         res.status(400).json({ message: err.message });
@@ -103,6 +105,12 @@ router.patch('/:id/toggle', async (req, res) => {
 
         promo.isActive = !promo.isActive;
         await promo.save();
+
+        const io = req.app.get('socketio');
+        if (io) {
+            io.emit('promoUpdated', promo);
+        }
+
         res.json(promo);
     } catch (err) {
         res.status(400).json({ message: err.message });
@@ -113,6 +121,8 @@ router.patch('/:id/toggle', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         await PromoCode.findByIdAndDelete(req.params.id);
+        const io = req.app.get('socketio');
+        if (io) io.emit('promoDeleted', { _id: req.params.id });
         res.json({ message: "Promo deleted" });
     } catch (err) {
         res.status(500).json({ message: err.message });

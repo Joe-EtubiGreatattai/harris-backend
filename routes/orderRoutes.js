@@ -33,10 +33,14 @@ router.post('/', async (req, res) => {
         // If a promo code was used, increment its usage count
         if (orderData.promoCode) {
             try {
-                await PromoCode.findOneAndUpdate(
+                const updatedPromo = await PromoCode.findOneAndUpdate(
                     { code: orderData.promoCode.toUpperCase() },
-                    { $inc: { usedCount: 1 } }
+                    { $inc: { usedCount: 1 } },
+                    { new: true }
                 );
+                if (updatedPromo && io) {
+                    io.emit('promoUpdated', updatedPromo);
+                }
             } catch (promoErr) {
                 console.error("Failed to increment promo usage:", promoErr);
             }
