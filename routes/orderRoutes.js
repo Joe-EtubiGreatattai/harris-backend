@@ -3,6 +3,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Rider = require('../models/Rider');
 const PushSubscription = require('../models/PushSubscription');
+const PromoCode = require('../models/PromoCode');
 const webpush = require('web-push');
 const { updateBestSellers } = require('../services/rankingService');
 
@@ -28,6 +29,18 @@ router.post('/', async (req, res) => {
         // Emit socket event
         const io = req.app.get('socketio');
         io.emit('newOrder', savedOrder);
+
+        // If a promo code was used, increment its usage count
+        if (orderData.promoCode) {
+            try {
+                await PromoCode.findOneAndUpdate(
+                    { code: orderData.promoCode.toUpperCase() },
+                    { $inc: { usedCount: 1 } }
+                );
+            } catch (promoErr) {
+                console.error("Failed to increment promo usage:", promoErr);
+            }
+        }
 
         res.status(201).json(savedOrder);
     } catch (err) {
