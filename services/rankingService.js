@@ -5,8 +5,8 @@ const updateBestSellers = async () => {
     try {
         console.log("Updating Automated Best Sellers...");
 
-        // 1. Reset all automated best sellers
-        await Product.updateMany({}, { isAutomatedBestSeller: false });
+        // 1. Reset all automated best sellers AND salesCount
+        await Product.updateMany({}, { isAutomatedBestSeller: false, salesCount: 0 });
 
         // 2. Aggregate sales per product from all orders
         // Note: For a production app, we might only look at the last 30 days.
@@ -23,6 +23,7 @@ const updateBestSellers = async () => {
 
         // 3. Update each product's salesCount
         for (const item of salesData) {
+            // Find by the custom string id
             await Product.findOneAndUpdate({ id: item._id }, { salesCount: item.count });
         }
 
