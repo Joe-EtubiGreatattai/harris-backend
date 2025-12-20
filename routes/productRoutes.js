@@ -24,10 +24,15 @@ const multer = require('multer');
 const upload = multer({ storage });
 
 // Upload Endpoint
-router.post('/upload', upload.single('image'), (req, res) => {
-    if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
-    // Cloudinary returns the full URL in path or secure_url
-    res.json({ url: req.file.path });
+router.post('/upload', (req, res, next) => {
+    upload.single('image')(req, res, (err) => {
+        if (err) {
+            console.error("❌ Multer/Cloudinary Error:", err);
+            return res.status(500).json({ error: err.message || err });
+        }
+        if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
+        res.json({ url: req.file.path });
+    });
 });
 
 // Helper to emit product events
