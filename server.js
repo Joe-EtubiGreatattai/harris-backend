@@ -39,21 +39,47 @@ mongoose.connect(MONGO_URI)
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
+    // Clients join a room based on their email for scoped updates
+    socket.on('join', (email) => {
+        if (email) {
+            const room = `user:${email}`;
+            socket.join(room);
+            console.log(`User ${email} joined room: ${room}`);
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
     });
 
-    // Relay client-side events for cross-tab syncing
+    // Relay client-side events for cross-tab/cross-device syncing
     socket.on('userProfileUpdated', (data) => {
-        socket.broadcast.emit('userProfileUpdated', data);
+        // Data contains the full profile including email
+        if (data && data.email) {
+            const room = `user:${data.email}`;
+            socket.to(room).emit('userProfileUpdated', data);
+        }
     });
 
     socket.on('cartUpdated', (data) => {
-        socket.broadcast.emit('cartUpdated', data);
+        // Expecting data to have { email, items }
+        if (data && data.email) {
+            const room = `user:${data.email}`;
+            socket.to(room).emit('cartUpdated', data.items);
+        } else if (Array.isArray(data)) {
+            // Fallback for old clients if any, though we should update all
+            socket.broadcast.emit('cartUpdated', data);
+        }
     });
 
     socket.on('cartCleared', (data) => {
-        socket.broadcast.emit('cartCleared', data);
+        // Expecting data to have { email }
+        if (data && data.email) {
+            const room = `user:${data.email}`;
+            socket.to(room).emit('cartCleared');
+        } else {
+            socket.broadcast.emit('cartCleared');
+        }
     });
 });
 
