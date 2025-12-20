@@ -18,7 +18,7 @@ const createOrder = async (orderData, io) => {
         const savedOrder = await (await newOrder.save()).populate('assignedRider');
 
         // Background update of best sellers
-        updateBestSellers();
+        updateBestSellers(io);
 
         // Emit socket event
         if (io) {

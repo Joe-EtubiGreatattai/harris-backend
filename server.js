@@ -31,7 +31,7 @@ const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI)
     .then(() => {
         console.log('MongoDB Connected');
-        updateBestSellers(); // Initial ranking on startup
+        updateBestSellers(io); // Initial ranking on startup
     })
     .catch(err => console.log('MongoDB Connection Error:', err));
 

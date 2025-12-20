@@ -1,7 +1,7 @@
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 
-const updateBestSellers = async () => {
+const updateBestSellers = async (io = null) => {
     try {
         console.log("Updating Automated Best Sellers...");
 
@@ -24,7 +24,16 @@ const updateBestSellers = async () => {
         // 3. Update each product's salesCount
         for (const item of salesData) {
             // Find by the custom string id
-            await Product.findOneAndUpdate({ id: item._id }, { salesCount: item.count });
+            const updatedProduct = await Product.findOneAndUpdate(
+                { id: item._id },
+                { salesCount: item.count },
+                { new: true }
+            );
+
+            // Emit update in real-time
+            if (io && updatedProduct) {
+                io.emit('productUpdated', updatedProduct);
+            }
         }
 
         // 4. For each distinct category in the database, pick the top seller
@@ -37,6 +46,11 @@ const updateBestSellers = async () => {
             if (topProduct && topProduct.salesCount > 0) {
                 topProduct.isAutomatedBestSeller = true;
                 await topProduct.save();
+
+                // Emit update for best seller tag
+                if (io) {
+                    io.emit('productUpdated', topProduct);
+                }
             }
         }
 
