@@ -2,6 +2,30 @@ const express = require('express');
 const router = express.Router();
 const PromoCode = require('../models/PromoCode');
 
+// Generate a unique promo code (Admin)
+router.get('/generate-code', async (req, res) => {
+    try {
+        const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // Removed confusing chars like I, O
+        const numbers = "23456789"; // Removed confusing chars like 1, 0
+
+        let isUnique = false;
+        let code = "";
+
+        while (!isUnique) {
+            code = "";
+            for (let i = 0; i < 4; i++) code += letters.charAt(Math.floor(Math.random() * letters.length));
+            for (let i = 0; i < 3; i++) code += numbers.charAt(Math.floor(Math.random() * numbers.length));
+
+            const existing = await PromoCode.findOne({ code });
+            if (!existing) isUnique = true;
+        }
+
+        res.json({ code });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Get all promos (Admin)
 router.get('/', async (req, res) => {
     try {
