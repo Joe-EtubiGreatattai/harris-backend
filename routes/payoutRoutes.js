@@ -48,6 +48,16 @@ router.get('/banks', async (req, res) => {
     }
 });
 
+// Get Paystack account balance
+router.get('/balance', async (req, res) => {
+    try {
+        const result = await paystackRequest('/balance', 'GET');
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Verify bank account
 router.post('/verify-account', async (req, res) => {
     const { accountNumber, bankCode } = req.body;
