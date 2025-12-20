@@ -3,49 +3,15 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Rider = require('../models/Rider');
 const PushSubscription = require('../models/PushSubscription');
-const PromoCode = require('../models/PromoCode');
 const webpush = require('web-push');
 const { updateBestSellers } = require('../services/rankingService');
+const orderService = require('../services/orderService');
 
 // Create New Order
 router.post('/', async (req, res) => {
-    const orderData = req.body;
     try {
-        // Idempotency check: if orderId already exists, return it
-        const existingOrder = await Order.findOne({ orderId: orderData.orderId }).populate('assignedRider');
-        if (existingOrder) {
-            console.log(`Order ${orderData.orderId} already exists, returning existing.`);
-            return res.json(existingOrder);
-        }
-
-        // Rider assignment now happens at 'Ready for Delivery' stage manually by Admin
-
-        const newOrder = new Order(orderData);
-        const savedOrder = await (await newOrder.save()).populate('assignedRider');
-
-        // Background update of best sellers
-        updateBestSellers();
-
-        // Emit socket event
         const io = req.app.get('socketio');
-        io.emit('newOrder', savedOrder);
-
-        // If a promo code was used, increment its usage count
-        if (orderData.promoCode) {
-            try {
-                const updatedPromo = await PromoCode.findOneAndUpdate(
-                    { code: orderData.promoCode.toUpperCase() },
-                    { $inc: { usedCount: 1 } },
-                    { new: true }
-                );
-                if (updatedPromo && io) {
-                    io.emit('promoUpdated', updatedPromo);
-                }
-            } catch (promoErr) {
-                console.error("Failed to increment promo usage:", promoErr);
-            }
-        }
-
+        const savedOrder = await orderService.createOrder(req.body, io);
         res.status(201).json(savedOrder);
     } catch (err) {
         res.status(400).json({ message: err.message });

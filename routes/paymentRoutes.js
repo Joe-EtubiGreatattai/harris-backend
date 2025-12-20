@@ -1,20 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const https = require('https');
+const orderService = require('../services/orderService');
 require('dotenv').config();
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 
 // Initialize Payment
 router.post('/initialize', async (req, res) => {
-    const { email, amount } = req.body;
+    const { email, amount, metadata } = req.body;
 
     // Convert amount to kobo (Paystack expects amount in lowest currency unit)
     const params = JSON.stringify({
         email: email,
         amount: Math.round(amount * 100), // Naira to Kobo (rounded for safety)
         // callback_url: "https://harris-frontend-kkg4.vercel.app/payment/callback" // Localhost
-        callback_url: "https://harris-backend.onrender.com/payment/callback" // Hosted backend callback handler
+        callback_url: "http://192.168.0.130:4000/payment/callback", // Hosted backend callback handler
+        metadata: metadata
     });
 
     const options = {
@@ -112,8 +114,15 @@ router.post('/webhook', async (req, res) => {
 
             console.log(`Payment successful for reference: ${reference}`);
 
-            // TODO: In a "server-first" flow, we would update the Order status here using metadata.orderId
-            // For now, we acknowledge receipt.
+            if (metadata && metadata.orderData) {
+                try {
+                    const io = req.app.get('socketio');
+                    await orderService.createOrder(metadata.orderData, io);
+                    console.log(`Order ${metadata.orderData.orderId} created via Webhook`);
+                } catch (orderErr) {
+                    console.error("Failed to create order via Webhook:", orderErr);
+                }
+            }
         }
 
         res.sendStatus(200);
