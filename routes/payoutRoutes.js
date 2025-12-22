@@ -58,6 +58,16 @@ router.get('/balance', async (req, res) => {
     }
 });
 
+// Get total transaction volume
+router.get('/totals', async (req, res) => {
+    try {
+        const result = await paystackRequest('/transaction/totals', 'GET');
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Verify bank account
 router.post('/verify-account', async (req, res) => {
     const { accountNumber, bankCode } = req.body;
