@@ -15,7 +15,7 @@ router.post('/initialize', async (req, res) => {
         email: email,
         amount: Math.round(amount * 100), // Naira to Kobo (rounded for safety)
         // callback_url: "https://harris-frontend-kkg4.vercel.app/payment/callback" // Localhost
-        callback_url: "http://192.168.0.130:4000/payment/callback", // Hosted backend callback handler
+        callback_url: "https://harris-backend.onrender.com/payment/callback", // Hosted backend callback handler
         metadata: metadata
     });
 
