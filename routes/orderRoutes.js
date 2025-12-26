@@ -34,7 +34,9 @@ router.get('/user/:email', async (req, res) => {
 // Get ALL Orders (Admin)
 router.get('/', async (req, res) => {
     try {
-        const orders = await Order.find().sort({ createdAt: -1 }).populate('assignedRider');
+        const orders = await Order.find({ status: { $ne: 'Pending Payment' } })
+            .sort({ createdAt: -1 })
+            .populate('assignedRider');
         res.json(orders);
     } catch (err) {
         res.status(500).json({ message: err.message });
