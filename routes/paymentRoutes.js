@@ -10,6 +10,25 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 router.post('/initialize', async (req, res) => {
     const { email, amount, metadata } = req.body;
 
+    // 1. Basic Regex Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+        return res.status(400).json({ status: false, message: "Invalid email address format" });
+    }
+
+    // 2. DNS MX Check (Optional but helpful)
+    const dns = require('dns').promises;
+    try {
+        const domain = email.split('@')[1];
+        const mx = await dns.resolveMx(domain);
+        if (!mx || mx.length === 0) {
+            return res.status(400).json({ status: false, message: "Email domain does not exist or cannot receive emails" });
+        }
+    } catch (dnsErr) {
+        console.warn(`DNS check failed for ${email}:`, dnsErr.message);
+        // We don't block if DNS fails (could be transient), but regex is hard requirement
+    }
+
     // Convert amount to kobo (Paystack expects amount in lowest currency unit)
     const params = JSON.stringify({
         email: email,

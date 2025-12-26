@@ -164,4 +164,81 @@ router.patch('/:id/assign-rider', async (req, res) => {
     }
 });
 
+// Ping Kitchen
+router.post('/:id/ping', async (req, res) => {
+    try {
+        const orderId = req.params.id;
+        let order = await Order.findOne({ orderId });
+        if (!order) order = await Order.findById(orderId);
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        // Check cooldown (3 minutes)
+        const lastPing = order.pings[order.pings.length - 1];
+        if (lastPing && (new Date() - new Date(lastPing.at)) < 3 * 60 * 1000) {
+            return res.status(429).json({ message: 'You can only ping every 3 minutes.' });
+        }
+
+        order.pings.push({ at: new Date(), acknowledged: false });
+        await order.save();
+
+        const io = req.app.get('socketio');
+        if (io) {
+            io.emit('adminOrderPinged', { orderId: order.orderId, userEmail: order.user.email });
+        }
+
+        res.json({ message: 'Ping sent to kitchen', order });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Acknowledge Ping
+router.post('/:id/acknowledge-ping', async (req, res) => {
+    try {
+        const orderId = req.params.id;
+        let order = await Order.findOne({ orderId });
+        if (!order) order = await Order.findById(orderId);
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        // Update all unacknowledged pings
+        order.pings.forEach(p => {
+            if (!p.acknowledged) {
+                p.acknowledged = true;
+                p.acknowledgedAt = new Date();
+            }
+        });
+
+        await order.save();
+
+        const io = req.app.get('socketio');
+        if (io) {
+            io.to(`order:${order.orderId}`).emit('orderPingAcknowledged', { orderId: order.orderId });
+        }
+
+        res.json({ message: 'Ping acknowledged', order });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Update User Phone for Order
+router.patch('/:id/phone', async (req, res) => {
+    try {
+        const { phone } = req.body;
+        const orderId = req.params.id;
+        let order = await Order.findOneAndUpdate(
+            { orderId },
+            { 'user.phone': phone },
+            { new: true }
+        );
+        if (!order) order = await Order.findByIdAndUpdate(orderId, { 'user.phone': phone }, { new: true });
+
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        res.json(order);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 module.exports = router;

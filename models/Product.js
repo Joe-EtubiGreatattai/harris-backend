@@ -20,7 +20,8 @@ const ProductSchema = new mongoose.Schema({
         name: { type: String, required: true },
         price: { type: Number, default: 500 },
         isAvailable: { type: Boolean, default: true }
-    }]
+    }],
+    estimatedPrepTime: { type: Number, default: 15 } // Default to 15 minutes
 });
 
 // Virtual for backward compatibility or general UI check

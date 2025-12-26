@@ -48,6 +48,14 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('joinOrder', (orderId) => {
+        if (orderId) {
+            const room = `order:${orderId}`;
+            socket.join(room);
+            console.log(`Socket ${socket.id} joined order room: ${room}`);
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
     });
@@ -79,6 +87,19 @@ io.on('connection', (socket) => {
             socket.to(room).emit('cartCleared');
         } else {
             socket.broadcast.emit('cartCleared');
+        }
+    });
+
+    socket.on('orderPinged', (data) => {
+        // Broadcast to all admins or a specific admin room if it existed
+        // For now, simple broadcast for pings
+        io.emit('adminOrderPinged', data);
+    });
+
+    socket.on('orderPingAcknowledged', (data) => {
+        // Emit to the specific order room
+        if (data && data.orderId) {
+            io.to(`order:${data.orderId}`).emit('orderPingAcknowledged', data);
         }
     });
 });

@@ -20,7 +20,14 @@ const OrderSchema = new mongoose.Schema({
     }],
     total: { type: Number, required: true },
     deliveryFee: { type: Number, default: 0 },
+    deliveryMethod: { type: String, enum: ['Delivery', 'Pick-up'], default: 'Delivery' },
     status: { type: String, enum: ['Pending', 'Preparing', 'Ready for Delivery', 'Out for Delivery', 'Delivered'], default: 'Pending' },
+    estimatedTotalPrepTime: { type: Number, default: 0 },
+    pings: [{
+        at: { type: Date, default: Date.now },
+        acknowledged: { type: Boolean, default: false },
+        acknowledgedAt: { type: Date }
+    }],
     assignedRider: { type: mongoose.Schema.Types.ObjectId, ref: 'Rider' },
     date: { type: String }, // Storing date string as formatted in frontend for now, or use createdAt
     deliveredAt: { type: Date },
