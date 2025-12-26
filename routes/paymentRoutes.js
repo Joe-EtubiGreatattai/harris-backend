@@ -106,6 +106,42 @@ router.get('/verify/:reference', async (req, res) => {
     request.end();
 });
 
+// Fetch All Transactions
+router.get('/transactions', async (req, res) => {
+    const options = {
+        hostname: 'api.paystack.co',
+        port: 443,
+        path: '/transaction',
+        method: 'GET',
+        headers: {
+            Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`
+        }
+    };
+
+    const request = https.request(options, response => {
+        let data = '';
+        response.on('data', (chunk) => {
+            data += chunk;
+        });
+
+        response.on('end', () => {
+            try {
+                const result = JSON.parse(data);
+                res.status(200).json(result);
+            } catch (error) {
+                res.status(500).json({ error: "Failed to parse Paystack response" });
+            }
+        });
+    });
+
+    request.on('error', error => {
+        console.error(error);
+        res.status(500).json({ error: "An error occurred" });
+    });
+
+    request.end();
+});
+
 // Paystack Callback (Redirect after payment)
 router.get('/callback', async (req, res) => {
     const { reference } = req.query;

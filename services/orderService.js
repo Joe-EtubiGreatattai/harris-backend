@@ -4,9 +4,16 @@ const PromoCode = require('../models/PromoCode');
 const PushSubscription = require('../models/PushSubscription');
 const webpush = require('web-push');
 const { updateBestSellers } = require('./rankingService');
+const Settings = require('../models/Settings');
 
 const createOrder = async (orderData, io) => {
     try {
+        // Check if store is open
+        const settings = await Settings.findOne();
+        if (settings && settings.isOpen === false) {
+            throw new Error("We are currently closed and not accepting orders. Please check back later!");
+        }
+
         // Idempotency check: if orderId already exists, return it
         const existingOrder = await Order.findOne({ orderId: orderData.orderId }).populate('assignedRider');
         if (existingOrder) {
