@@ -21,7 +21,7 @@ const OrderSchema = new mongoose.Schema({
     total: { type: Number, required: true },
     deliveryFee: { type: Number, default: 0 },
     deliveryMethod: { type: String, enum: ['Delivery', 'Pick-up'], default: 'Delivery' },
-    status: { type: String, enum: ['Pending', 'Preparing', 'Ready for Delivery', 'Out for Delivery', 'Delivered'], default: 'Pending' },
+    status: { type: String, enum: ['Pending Payment', 'Pending', 'Preparing', 'Ready for Delivery', 'Out for Delivery', 'Delivered'], default: 'Pending Payment' },
     estimatedTotalPrepTime: { type: Number, default: 0 },
     pings: [{
         at: { type: Date, default: Date.now },

@@ -124,12 +124,6 @@ app.use('/api/ratings', require('./routes/ratingRoutes'));
 app.use('/api/promos', promoRoutes);
 app.use('/api/payouts', require('./routes/payoutRoutes'));
 
-app.get('/payment/callback', (req, res) => {
-    // Redirect to frontend with query parameters
-    const queryString = new URLSearchParams(req.query).toString();
-    const frontendUrl = process.env.FRONTEND_URL || "https://harris-frontend-kkg4.vercel.app";
-    res.redirect(`${frontendUrl}/payment/callback?${queryString}`);
-});
 
 app.get('/', (req, res) => {
     res.send('Pizza App API is running');

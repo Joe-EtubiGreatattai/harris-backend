@@ -20,8 +20,8 @@ const createOrder = async (orderData, io) => {
         // Background update of best sellers
         updateBestSellers(io);
 
-        // Emit socket event
-        if (io) {
+        // Emit socket event ONLY if it's not Pending Payment
+        if (io && savedOrder.status !== 'Pending Payment') {
             io.emit('newOrder', savedOrder);
         }
 
@@ -52,6 +52,38 @@ const createOrder = async (orderData, io) => {
     }
 };
 
+const confirmPayment = async (orderId, io) => {
+    try {
+        const order = await Order.findOne({ orderId }).populate('assignedRider');
+        if (!order) {
+            console.error(`Order ${orderId} not found for payment confirmation`);
+            return null;
+        }
+
+        if (order.status === 'Pending Payment') {
+            order.status = 'Pending';
+            const savedOrder = await order.save();
+
+            // Background update of best sellers
+            updateBestSellers(io);
+
+            // Notify Admin of NEW PAID order
+            if (io) {
+                io.emit('newOrder', savedOrder);
+            }
+
+            console.log(`Order ${orderId} confirmed and moved to Pending status`);
+            return savedOrder;
+        }
+
+        return order;
+    } catch (err) {
+        console.error("Error in orderService.confirmPayment:", err);
+        throw err;
+    }
+};
+
 module.exports = {
-    createOrder
+    createOrder,
+    confirmPayment
 };

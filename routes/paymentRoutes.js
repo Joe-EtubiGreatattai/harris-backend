@@ -33,8 +33,7 @@ router.post('/initialize', async (req, res) => {
     const params = JSON.stringify({
         email: email,
         amount: Math.round(amount * 100), // Naira to Kobo (rounded for safety)
-        // callback_url: "https://harris-frontend-kkg4.vercel.app/payment/callback" // Localhost
-        callback_url: "https://harris-backend.onrender.com/payment/callback", // Hosted backend callback handler
+        callback_url: "https://harris-backend.onrender.com/api/payment/callback", // Backend callback handler
         metadata: metadata
     });
 
@@ -104,12 +103,62 @@ router.get('/verify/:reference', async (req, res) => {
         });
     });
 
-    request.on('error', error => {
-        console.error(error);
-        res.status(500).json({ error: "An error occurred" });
-    });
-
     request.end();
+});
+
+// Paystack Callback (Redirect after payment)
+router.get('/callback', async (req, res) => {
+    const { reference } = req.query;
+
+    if (!reference) {
+        return res.redirect('https://harris-frontend-kkg4.vercel.app/cart?error=missing_reference');
+    }
+
+    try {
+        // 1. Verify payment with Paystack
+        const options = {
+            hostname: 'api.paystack.co',
+            port: 443,
+            path: `/transaction/verify/${reference}`,
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`
+            }
+        };
+
+        const request = https.request(options, response => {
+            let data = '';
+            response.on('data', (chunk) => data += chunk);
+            response.on('end', async () => {
+                try {
+                    const result = JSON.parse(data);
+                    if (result.status && result.data.status === 'success') {
+                        const orderId = result.data.metadata?.orderData?.orderId;
+                        if (orderId) {
+                            const io = req.app.get('socketio');
+                            await orderService.confirmPayment(orderId, io);
+                        }
+                        return res.redirect('https://harris-frontend-kkg4.vercel.app/payment/callback?reference=' + reference);
+                    } else {
+                        return res.redirect(`https://harris-frontend-kkg4.vercel.app/cart?error=payment_failed&ref=${reference}`);
+                    }
+                } catch (err) {
+                    console.error("Callback processing error:", err);
+                    res.redirect('https://harris-frontend-kkg4.vercel.app/cart?error=processing_error');
+                }
+            });
+        });
+
+        request.on('error', err => {
+            console.error("Callback request error:", err);
+            res.redirect('https://harris-frontend-kkg4.vercel.app/cart?error=server_error');
+        });
+
+        request.end();
+    } catch (err) {
+        console.error("Callback error:", err);
+        res.redirect('https://harris-frontend-kkg4.vercel.app/cart?error=internal_error');
+    }
 });
 
 // Paystack Webhook
@@ -133,13 +182,12 @@ router.post('/webhook', async (req, res) => {
 
             console.log(`Payment successful for reference: ${reference}`);
 
-            if (metadata && metadata.orderData) {
+            if (metadata && metadata.orderData && metadata.orderData.orderId) {
                 try {
                     const io = req.app.get('socketio');
-                    await orderService.createOrder(metadata.orderData, io);
-                    console.log(`Order ${metadata.orderData.orderId} created via Webhook`);
+                    await orderService.confirmPayment(metadata.orderData.orderId, io);
                 } catch (orderErr) {
-                    console.error("Failed to create order via Webhook:", orderErr);
+                    console.error("Failed to confirm order via Webhook:", orderErr);
                 }
             }
         }
