@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
+const User = require('../models/User');
 const nodemailer = require('nodemailer');
 
 // Get All Unique Users (Aggregated from Orders)
@@ -26,13 +27,43 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Get Order History for a specific User
-router.get('/:email/orders', async (req, res) => {
+// Get Profile by Email
+router.get('/profile/:email', async (req, res) => {
     try {
-        const orders = await Order.find({ 'user.email': req.params.email })
-            .sort({ createdAt: -1 })
-            .populate('assignedRider');
-        res.json(orders);
+        let user = await User.findOne({ email: req.params.email });
+        if (!user) {
+            // Find last order to populate initial data if user doesn't exist yet
+            const lastOrder = await Order.findOne({ 'user.email': req.params.email }).sort({ createdAt: -1 });
+            if (lastOrder) {
+                user = new User({
+                    email: req.params.email,
+                    phone: lastOrder.user.phone,
+                    address: lastOrder.user.address
+                });
+                await user.save();
+            }
+        }
+        res.json(user || { email: req.params.email });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Update Profile
+router.post('/profile', async (req, res) => {
+    const { email, phone, address, savedAddresses } = req.body;
+    try {
+        const user = await User.findOneAndUpdate(
+            { email },
+            {
+                phone,
+                address,
+                savedAddresses,
+                lastSeen: new Date()
+            },
+            { upsert: true, new: true }
+        );
+        res.json(user);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

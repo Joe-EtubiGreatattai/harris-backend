@@ -5,6 +5,7 @@ const PushSubscription = require('../models/PushSubscription');
 const webpush = require('web-push');
 const { updateBestSellers } = require('./rankingService');
 const Settings = require('../models/Settings');
+const User = require('../models/User');
 
 const createOrder = async (orderData, io) => {
     try {
@@ -42,6 +43,19 @@ const createOrder = async (orderData, io) => {
             status: 'Pending Payment' // Force status to Pending Payment for safety
         });
         const savedOrder = await (await newOrder.save()).populate('assignedRider');
+
+        // Upsert User profile data
+        if (orderData.user && orderData.user.email) {
+            await User.findOneAndUpdate(
+                { email: orderData.user.email.toLowerCase() },
+                {
+                    phone: orderData.user.phone,
+                    address: orderData.user.address,
+                    lastSeen: new Date()
+                },
+                { upsert: true }
+            );
+        }
 
         // Background update of best sellers
         updateBestSellers(io);
@@ -96,6 +110,14 @@ const confirmPayment = async (orderId, io) => {
             // Notify Admin of NEW PAID order
             if (io) {
                 io.emit('newOrder', savedOrder);
+            }
+
+            if (order.user && order.user.email) {
+                await User.findOneAndUpdate(
+                    { email: order.user.email.toLowerCase() },
+                    { lastSeen: new Date() },
+                    { upsert: true }
+                );
             }
 
             console.log(`Order ${orderId} confirmed and moved to Pending status`);
