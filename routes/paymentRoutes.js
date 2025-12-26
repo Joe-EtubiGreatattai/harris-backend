@@ -108,10 +108,18 @@ router.get('/verify/:reference', async (req, res) => {
 
 // Fetch All Transactions
 router.get('/transactions', async (req, res) => {
+    const { from, to, status } = req.query;
+    let path = '/transaction';
+    const params = [];
+    if (from) params.push(`from=${from}`);
+    if (to) params.push(`to=${to}`);
+    if (status) params.push(`status=${status}`);
+    if (params.length > 0) path += `?${params.join('&')}`;
+
     const options = {
         hostname: 'api.paystack.co',
         port: 443,
-        path: '/transaction',
+        path: path,
         method: 'GET',
         headers: {
             Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`
