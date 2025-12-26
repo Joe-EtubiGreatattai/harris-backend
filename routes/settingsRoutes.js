@@ -20,13 +20,15 @@ router.get('/', async (req, res) => {
 // Update Settings
 router.patch('/', async (req, res) => {
     try {
-        const { deliveryFee, isOpen } = req.body;
+        const { deliveryFee, isOpen, openingTime, closingTime } = req.body;
         let settings = await Settings.findOne();
         if (!settings) {
-            settings = new Settings({ deliveryFee, isOpen });
+            settings = new Settings({ deliveryFee, isOpen, openingTime, closingTime });
         } else {
             if (deliveryFee !== undefined) settings.deliveryFee = deliveryFee;
             if (isOpen !== undefined) settings.isOpen = isOpen;
+            if (openingTime !== undefined) settings.openingTime = openingTime;
+            if (closingTime !== undefined) settings.closingTime = closingTime;
         }
         const updated = await settings.save();
 

@@ -127,6 +127,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/ratings', require('./routes/ratingRoutes'));
 app.use('/api/promos', promoRoutes);
 app.use('/api/payouts', require('./routes/payoutRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 
 app.get('/', (req, res) => {

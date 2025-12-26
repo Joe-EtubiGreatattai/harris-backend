@@ -10,8 +10,24 @@ const createOrder = async (orderData, io) => {
     try {
         // Check if store is open
         const settings = await Settings.findOne();
-        if (settings && settings.isOpen === false) {
-            throw new Error("We are currently closed and not accepting orders. Please check back later!");
+        if (settings) {
+            if (settings.isOpen === false) {
+                throw new Error("We are currently closed and not accepting orders. Please check back later!");
+            }
+
+            // Time-based check
+            const now = new Date();
+            // Using Intl.DateTimeFormat to get time in a specific timezone if needed, 
+            // but for now let's use the local server time as a reasonable default.
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTimeStr = `${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`;
+
+            if (settings.openingTime && settings.closingTime) {
+                if (currentTimeStr < settings.openingTime || currentTimeStr > settings.closingTime) {
+                    throw new Error(`We are currently closed. Our opening hours are ${settings.openingTime} to ${settings.closingTime}.`);
+                }
+            }
         }
 
         // Idempotency check: if orderId already exists, return it
