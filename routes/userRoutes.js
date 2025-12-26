@@ -74,6 +74,16 @@ router.get('/profile/:email', async (req, res) => {
     }
 });
 
+// Get All Orders for a Specific User (Admin History)
+router.get('/:email/orders', async (req, res) => {
+    try {
+        const orders = await Order.find({ 'user.email': req.params.email }).sort({ createdAt: -1 });
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Update Profile
 router.post('/profile', async (req, res) => {
     const { email, phone, address, savedAddresses } = req.body;
