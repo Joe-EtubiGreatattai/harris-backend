@@ -166,34 +166,35 @@ router.post('/webhook', async (req, res) => {
     const crypto = require('crypto');
     const secret = PAYSTACK_SECRET_KEY;
 
-    // Validate event
-    const hash = crypto.createHmac('sha512', secret).update(JSON.stringify(req.body)).digest('hex');
+    // Validate event with Raw Body
+    const hash = crypto.createHmac('sha512', secret).update(req.rawBody).digest('hex');
 
     if (hash == req.headers['x-paystack-signature']) {
-        // Retrieve the request's body
         const event = req.body;
-
-        // Log event for now
-        console.log("Paystack Event Received:", event.event);
+        console.log(`✅ Paystack Webhook Verified: ${event.event}`);
 
         if (event.event === 'charge.success') {
             const reference = event.data.reference;
             const metadata = event.data.metadata;
+            const amount = event.data.amount / 100;
 
-            console.log(`Payment successful for reference: ${reference}`);
+            console.log(`💰 Payment Successful: ${reference} - ₦${amount}`);
 
             if (metadata && metadata.orderData && metadata.orderData.orderId) {
                 try {
                     const io = req.app.get('socketio');
                     await orderService.confirmPayment(metadata.orderData.orderId, io);
+                    console.log(`📦 Order ${metadata.orderData.orderId} confirmed via Webhook`);
                 } catch (orderErr) {
-                    console.error("Failed to confirm order via Webhook:", orderErr);
+                    console.error("❌ Failed to confirm order via Webhook:", orderErr);
                 }
+            } else {
+                console.warn(`⚠️ Webhook received success but no orderId in metadata for ref: ${reference}`);
             }
         }
-
         res.sendStatus(200);
     } else {
+        console.error("❌ Paystack Webhook Signature Verification Failed");
         res.sendStatus(400);
     }
 });

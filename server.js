@@ -19,7 +19,11 @@ const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+    verify: (req, res, buf) => {
+        req.rawBody = buf;
+    }
+}));
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // Make io accessible to routes
