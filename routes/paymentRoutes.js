@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const https = require('https');
 const orderService = require('../services/orderService');
+const { verifyAdmin } = require('../middleware/authMiddleware');
 require('dotenv').config();
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
@@ -106,8 +107,8 @@ router.get('/verify/:reference', async (req, res) => {
     request.end();
 });
 
-// Fetch All Transactions
-router.get('/transactions', async (req, res) => {
+// Fetch All Transactions (Admin Only)
+router.get('/transactions', verifyAdmin, async (req, res) => {
     const { from, to, status } = req.query;
     let path = '/transaction';
     const params = [];

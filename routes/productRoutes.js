@@ -4,6 +4,7 @@ const Product = require('../models/Product');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const fs = require('fs');
+const { verifyAdmin } = require('../middleware/authMiddleware');
 
 // Cloudinary Config
 cloudinary.config({
@@ -23,8 +24,8 @@ const storage = new CloudinaryStorage({
 const multer = require('multer');
 const upload = multer({ storage });
 
-// Upload Endpoint
-router.post('/upload', (req, res, next) => {
+// Upload Endpoint (Admin)
+router.post('/upload', verifyAdmin, (req, res, next) => {
     upload.single('image')(req, res, (err) => {
         if (err) {
             console.error("❌ Multer/Cloudinary Error:", err);
@@ -67,7 +68,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create Product (Admin)
-router.post('/', async (req, res) => {
+router.post('/', verifyAdmin, async (req, res) => {
     const product = new Product(req.body);
     try {
         const newProduct = await product.save();
@@ -79,7 +80,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update Product (Admin)
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', verifyAdmin, async (req, res) => {
     try {
         const updatedProduct = await Product.findOneAndUpdate(
             { id: req.params.id },
@@ -96,7 +97,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete Product (Admin)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyAdmin, async (req, res) => {
     try {
         const deletedProduct = await Product.findOneAndDelete({ id: req.params.id });
         if (deletedProduct) {

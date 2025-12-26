@@ -7,6 +7,7 @@ const webpush = require('web-push');
 const User = require('../models/User');
 const { updateBestSellers } = require('../services/rankingService');
 const orderService = require('../services/orderService');
+const { verifyAdmin } = require('../middleware/authMiddleware');
 
 // Create New Order
 router.post('/', async (req, res) => {
@@ -33,7 +34,7 @@ router.get('/user/:email', async (req, res) => {
 });
 
 // Get ALL Orders (Admin)
-router.get('/', async (req, res) => {
+router.get('/', verifyAdmin, async (req, res) => {
     try {
         const orders = await Order.find({ status: { $ne: 'Pending Payment' } })
             .sort({ createdAt: -1 })
@@ -44,8 +45,8 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Update Order Status
-router.patch('/:id/status', async (req, res) => {
+// Update Order Status (Admin/Kitchen)
+router.patch('/:id/status', verifyAdmin, async (req, res) => {
     try {
         const { status, source } = req.body;
         const updateData = { status };
@@ -119,8 +120,8 @@ router.patch('/:id/status', async (req, res) => {
     }
 });
 
-// Assign Rider Manually
-router.patch('/:id/assign-rider', async (req, res) => {
+// Assign Rider Manually (Admin)
+router.patch('/:id/assign-rider', verifyAdmin, async (req, res) => {
     try {
         const { riderId } = req.body;
         const orderId = req.params.id;
@@ -195,8 +196,8 @@ router.post('/:id/ping', async (req, res) => {
     }
 });
 
-// Acknowledge Ping
-router.post('/:id/acknowledge-ping', async (req, res) => {
+// Acknowledge Ping (Admin/Kitchen)
+router.post('/:id/acknowledge-ping', verifyAdmin, async (req, res) => {
     try {
         const orderId = req.params.id;
         let order = await Order.findOne({ orderId });

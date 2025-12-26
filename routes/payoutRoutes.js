@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const https = require('https');
 const Withdrawal = require('../models/Withdrawal');
+const { verifyAdmin } = require('../middleware/authMiddleware');
 require('dotenv').config();
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
@@ -39,7 +40,7 @@ const paystackRequest = (path, method, body = null) => {
 };
 
 // Get list of banks
-router.get('/banks', async (req, res) => {
+router.get('/banks', verifyAdmin, async (req, res) => {
     try {
         const result = await paystackRequest('/bank?currency=NGN', 'GET');
         res.json(result);
@@ -49,7 +50,7 @@ router.get('/banks', async (req, res) => {
 });
 
 // Get Paystack account balance
-router.get('/balance', async (req, res) => {
+router.get('/balance', verifyAdmin, async (req, res) => {
     try {
         const result = await paystackRequest('/balance', 'GET');
         res.json(result);
@@ -59,7 +60,7 @@ router.get('/balance', async (req, res) => {
 });
 
 // Get total transaction volume
-router.get('/totals', async (req, res) => {
+router.get('/totals', verifyAdmin, async (req, res) => {
     try {
         const result = await paystackRequest('/transaction/totals', 'GET');
         res.json(result);
@@ -69,7 +70,7 @@ router.get('/totals', async (req, res) => {
 });
 
 // Verify bank account
-router.post('/verify-account', async (req, res) => {
+router.post('/verify-account', verifyAdmin, async (req, res) => {
     const { accountNumber, bankCode } = req.body;
     try {
         const result = await paystackRequest(`/bank/resolve?account_number=${accountNumber}&bank_code=${bankCode}`, 'GET');
@@ -80,7 +81,7 @@ router.post('/verify-account', async (req, res) => {
 });
 
 // Initiate withdrawal
-router.post('/initiate', async (req, res) => {
+router.post('/initiate', verifyAdmin, async (req, res) => {
     const { amount, bankCode, bankName, accountNumber, accountName, reason } = req.body;
 
     try {
@@ -136,7 +137,7 @@ router.post('/initiate', async (req, res) => {
 });
 
 // Get withdrawal history
-router.get('/history', async (req, res) => {
+router.get('/history', verifyAdmin, async (req, res) => {
     try {
         const history = await Withdrawal.find().sort({ createdAt: -1 });
         res.json(history);

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const PromoCode = require('../models/PromoCode');
+const { verifyAdmin } = require('../middleware/authMiddleware');
 
 // Generate a unique promo code (Admin)
-router.get('/generate-code', async (req, res) => {
+router.get('/generate-code', verifyAdmin, async (req, res) => {
     try {
         const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // Removed confusing chars like I, O
         const numbers = "23456789"; // Removed confusing chars like 1, 0
@@ -27,7 +28,7 @@ router.get('/generate-code', async (req, res) => {
 });
 
 // Get all promos (Admin)
-router.get('/', async (req, res) => {
+router.get('/', verifyAdmin, async (req, res) => {
     try {
         const promos = await PromoCode.find().sort({ createdAt: -1 });
         res.json(promos);
@@ -37,7 +38,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a promo (Admin)
-router.post('/', async (req, res) => {
+router.post('/', verifyAdmin, async (req, res) => {
     try {
         const promo = new PromoCode(req.body);
         const newPromo = await promo.save();
@@ -98,7 +99,7 @@ router.post('/validate', async (req, res) => {
 });
 
 // Toggle status (Admin)
-router.patch('/:id/toggle', async (req, res) => {
+router.patch('/:id/toggle', verifyAdmin, async (req, res) => {
     try {
         const promo = await PromoCode.findById(req.params.id);
         if (!promo) return res.status(404).json({ message: "Promo not found" });
@@ -118,7 +119,7 @@ router.patch('/:id/toggle', async (req, res) => {
 });
 
 // Delete (Admin)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyAdmin, async (req, res) => {
     try {
         await PromoCode.findByIdAndDelete(req.params.id);
         const io = req.app.get('socketio');

@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Rider = require('../models/Rider');
+const { verifyAdmin } = require('../middleware/authMiddleware');
 
 // Get all riders
-router.get('/', async (req, res) => {
+router.get('/', verifyAdmin, async (req, res) => {
     try {
         const riders = await Rider.find().sort({ createdAt: -1 });
         res.json(riders);
@@ -13,7 +14,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new rider
-router.post('/', async (req, res) => {
+router.post('/', verifyAdmin, async (req, res) => {
     const rider = new Rider(req.body);
     try {
         const newRider = await rider.save();
@@ -26,7 +27,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update rider status/details
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', verifyAdmin, async (req, res) => {
     try {
         const updatedRider = await Rider.findByIdAndUpdate(req.params.id, req.body, { new: true });
         const io = req.app.get('socketio');
@@ -38,7 +39,7 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete a rider
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verifyAdmin, async (req, res) => {
     try {
         await Rider.findByIdAndDelete(req.params.id);
         const io = req.app.get('socketio');

@@ -1,16 +1,48 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
-require('dotenv').config();
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
 
 const app = express();
+
+// 1. Security Headers (Set before other middleware)
+app.use(helmet());
+
+// 2. Trust Proxy (Required if behind Render/Heroku/Vercel for rate limiting)
+app.set('trust proxy', 1);
+
+// 3. Data Sanitization against NoSQL injection
+app.use(mongoSanitize());
+
+// 4. Data Sanitization against XSS
+app.use(xss());
+
+// 5. Prevent Parameter Pollution
+app.use(hpp());
+
+// 6. Rate Limiting
+const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+
+// Apply general rate limiting to all routes
+app.use('/api/', generalLimiter);
+
+// Stricter limiter for sensitive routes (Login)
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10, // 10 attempts per 15 mins
+    message: 'Too many login attempts, please try again after 15 minutes'
+});
+app.use('/api/admin/login', loginLimiter);
+
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "https://harris-frontend-kkg4.vercel.app", // Hosted frontend
+        origin: ["https://harris-frontend-kkg4.vercel.app", "http://localhost:5173"],
         methods: ["GET", "POST", "PUT", "DELETE"]
     }
 });
@@ -18,8 +50,23 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 4000;
 
 // Middleware
-app.use(cors());
+const allowedOrigins = ["https://harris-frontend-kkg4.vercel.app", "http://localhost:5173"];
+app.use(cors({
+    origin: function (origin, callback) {
+        // allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
+}));
+
 app.use(express.json({
+    limit: '10kb', // Limit body size to prevent DoS
     verify: (req, res, buf) => {
         req.rawBody = buf;
     }

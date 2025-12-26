@@ -3,9 +3,10 @@ const router = express.Router();
 const Order = require('../models/Order');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
+const { verifyAdmin } = require('../middleware/authMiddleware');
 
 // Get All Unique Users (Aggregated from Orders + Profile Sync)
-router.get('/', async (req, res) => {
+router.get('/', verifyAdmin, async (req, res) => {
     try {
         const users = await Order.aggregate([
             {
@@ -75,7 +76,7 @@ router.get('/profile/:email', async (req, res) => {
 });
 
 // Get All Orders for a Specific User (Admin History)
-router.get('/:email/orders', async (req, res) => {
+router.get('/:email/orders', verifyAdmin, async (req, res) => {
     try {
         const orders = await Order.find({ 'user.email': req.params.email }).sort({ createdAt: -1 });
         res.json(orders);
@@ -104,8 +105,8 @@ router.post('/profile', async (req, res) => {
     }
 });
 
-// Send Email to User
-router.post('/send-email', async (req, res) => {
+// Send Email to User (Admin Only)
+router.post('/send-email', verifyAdmin, async (req, res) => {
     const { email, subject, message } = req.body;
 
     if (!email || !subject || !message) {

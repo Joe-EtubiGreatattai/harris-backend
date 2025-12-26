@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Settings = require('../models/Settings');
+const { verifyAdmin } = require('../middleware/authMiddleware');
 
 // Get Settings
 router.get('/', async (req, res) => {
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
 });
 
 // Update Settings
-router.patch('/', async (req, res) => {
+router.patch('/', verifyAdmin, async (req, res) => {
     try {
         const { deliveryFee, isOpen, openingTime, closingTime } = req.body;
         let settings = await Settings.findOne();
