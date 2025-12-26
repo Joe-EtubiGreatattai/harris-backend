@@ -4,7 +4,7 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const nodemailer = require('nodemailer');
 
-// Get All Unique Users (Aggregated from Orders)
+// Get All Unique Users (Aggregated from Orders + Profile Sync)
 router.get('/', async (req, res) => {
     try {
         const users = await Order.aggregate([
@@ -12,11 +12,36 @@ router.get('/', async (req, res) => {
                 $group: {
                     _id: "$user.email",
                     email: { $first: "$user.email" },
-                    address: { $first: "$user.address" },
-                    phone: { $first: "$user.phone" },
                     orderCount: { $sum: 1 },
                     totalSpent: { $sum: "$total" },
                     lastOrder: { $max: "$createdAt" }
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "email",
+                    foreignField: "email",
+                    as: "profile"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$profile",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    email: 1,
+                    orderCount: 1,
+                    totalSpent: 1,
+                    lastOrder: 1,
+                    // Prioritize Profile data, fallback to order info (which we didn't $first but can if needed)
+                    // Actually, let's keep it simple: profile has the source of truth now.
+                    phone: { $ifNull: ["$profile.phone", "No Phone"] },
+                    address: { $ifNull: ["$profile.address", "No Address"] }
                 }
             },
             { $sort: { lastOrder: -1 } }
