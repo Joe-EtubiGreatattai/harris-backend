@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const Rider = require('../models/Rider');
 const PushSubscription = require('../models/PushSubscription');
 const webpush = require('web-push');
+const User = require('../models/User');
 const { updateBestSellers } = require('../services/rankingService');
 const orderService = require('../services/orderService');
 
@@ -241,6 +242,14 @@ router.patch('/:id/phone', async (req, res) => {
         const io = req.app.get('socketio');
         if (io) {
             io.emit('orderUpdated', order);
+        }
+
+        if (order && order.user && order.user.email) {
+            await User.findOneAndUpdate(
+                { email: order.user.email.toLowerCase() },
+                { phone, lastSeen: new Date() },
+                { upsert: true }
+            );
         }
 
         res.json(order);
