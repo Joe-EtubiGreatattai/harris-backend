@@ -14,7 +14,10 @@ const createOrder = async (orderData, io) => {
             return existingOrder;
         }
 
-        const newOrder = new Order(orderData);
+        const newOrder = new Order({
+            ...orderData,
+            status: 'Pending Payment' // Force status to Pending Payment for safety
+        });
         const savedOrder = await (await newOrder.save()).populate('assignedRider');
 
         // Background update of best sellers
