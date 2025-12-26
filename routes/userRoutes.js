@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const User = require('../models/User');
-const nodemailer = require('nodemailer');
 const { verifyAdmin } = require('../middleware/authMiddleware');
 
 // Get All Unique Users (Aggregated from Orders + Profile Sync)
@@ -105,43 +104,5 @@ router.post('/profile', async (req, res) => {
     }
 });
 
-// Send Email to User (Admin Only)
-router.post('/send-email', verifyAdmin, async (req, res) => {
-    const { email, subject, message } = req.body;
-
-    if (!email || !subject || !message) {
-        return res.status(400).json({ message: "Email, subject, and message are required." });
-    }
-
-    try {
-        // Create transporter using environment variables
-        const transporter = nodemailer.createTransport({
-            service: process.env.EMAIL_SERVICE || 'gmail',
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
-
-        const mailOptions = {
-            from: process.env.EMAIL_USER,
-            to: email,
-            subject: subject,
-            text: message,
-            html: `<div style="font-family: sans-serif; padding: 20px; line-height: 1.6;">${message.replace(/\n/g, '<br>')}</div>`
-        };
-
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            console.warn("Email credentials not set. Simulating success.");
-            return res.json({ success: true, message: "Email simulation successful (credentials missing)." });
-        }
-
-        await transporter.sendMail(mailOptions);
-        res.json({ success: true, message: "Email sent successfully." });
-    } catch (err) {
-        console.error("Failed to send email:", err);
-        res.status(500).json({ message: "Failed to send email: " + err.message });
-    }
-});
 
 module.exports = router;
