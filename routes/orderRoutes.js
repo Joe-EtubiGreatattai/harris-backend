@@ -237,6 +237,12 @@ router.patch('/:id/phone', async (req, res) => {
 
         if (!order) return res.status(404).json({ message: 'Order not found' });
 
+        // Emit socket event for real-time sync
+        const io = req.app.get('socketio');
+        if (io) {
+            io.emit('orderUpdated', order);
+        }
+
         res.json(order);
     } catch (err) {
         res.status(500).json({ message: err.message });
