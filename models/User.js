@@ -23,6 +23,14 @@ const UserSchema = new mongoose.Schema({
         home: { type: String, trim: true },
         work: { type: String, trim: true }
     },
+    location: {
+        lat: { type: Number },
+        lng: { type: Number }
+    },
+    isLocationSharing: {
+        type: Boolean,
+        default: false
+    },
     lastSeen: {
         type: Date,
         default: Date.now

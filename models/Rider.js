@@ -9,7 +9,12 @@ const RiderSchema = new mongoose.Schema({
         enum: ['Available', 'Busy', 'Offline', 'Suspended'],
         default: 'Available'
     },
-    image: String
+    image: String,
+    location: {
+        lat: { type: Number, default: 6.5244 }, // Default to Lagos lat
+        lng: { type: Number, default: 3.3792 }  // Default to Lagos lng
+    },
+    lastLocationUpdate: { type: Date, default: Date.now }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Rider', RiderSchema);

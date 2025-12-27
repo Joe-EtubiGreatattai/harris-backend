@@ -30,34 +30,33 @@ app.use(hpp());
 
 // 6. Rate Limiting
 const generalLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again after 15 minutes'
+    windowMs: 15 * 60 * 1000,
+    max: 1000, // Increased for development/production stability
+    message: 'Too many requests from this IP'
 });
 
 // Apply general rate limiting to all routes
 app.use('/api/', generalLimiter);
 
-// Stricter limiter for sensitive routes (Login)
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 10, // 10 attempts per 15 mins
-    message: 'Too many login attempts, please try again after 15 minutes'
+    max: 100, // Increased to prevent blocking legitimate tests
+    message: 'Too many login attempts'
 });
 app.use('/api/admin/login', loginLimiter);
 
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: ["https://harris-frontend-kkg4.vercel.app", "http://localhost:5173"],
-        methods: ["GET", "POST", "PUT", "DELETE"]
+        origin: ["https://harris-frontend-kkg4.vercel.app", "http://localhost:5173", "http://192.168.0.130:5173"],
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
     }
 });
 
 const PORT = process.env.PORT || 4000;
 
 // Middleware
-const allowedOrigins = ["https://harris-frontend-kkg4.vercel.app", "http://localhost:5173"];
+const allowedOrigins = ["https://harris-frontend-kkg4.vercel.app", "http://localhost:5173", "http://192.168.0.130:5173"];
 app.use(cors({
     origin: function (origin, callback) {
         // allow requests with no origin (like mobile apps or curl requests)
@@ -68,7 +67,7 @@ app.use(cors({
         }
         return callback(null, true);
     },
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true
 }));
 
@@ -155,9 +154,62 @@ io.on('connection', (socket) => {
     });
 
     socket.on('orderPingAcknowledged', (data) => {
-        // Emit to the specific order room
         if (data && data.orderId) {
             io.to(`order:${data.orderId}`).emit('orderPingAcknowledged', data);
+        }
+    });
+
+    socket.on('updateRiderLocation', async (data) => {
+        const { riderId, location } = data;
+        if (riderId && location) {
+            try {
+                const Rider = require('./models/Rider');
+                const updatedRider = await Rider.findByIdAndUpdate(
+                    riderId,
+                    {
+                        location,
+                        lastLocationUpdate: new Date()
+                    },
+                    { new: true }
+                );
+                if (updatedRider) {
+                    io.emit('riderLocationUpdated', {
+                        riderId: updatedRider._id,
+                        name: updatedRider.name,
+                        location: updatedRider.location,
+                        status: updatedRider.status
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to update rider location:", err);
+            }
+        }
+    });
+
+    socket.on('updateUserLocation', async (data) => {
+        const { email, location, isSharing } = data;
+        if (email && location) {
+            try {
+                const User = require('./models/User');
+                await User.findOneAndUpdate(
+                    { email },
+                    {
+                        location,
+                        isLocationSharing: isSharing,
+                        lastSeen: new Date()
+                    }
+                );
+
+                if (isSharing) {
+                    io.emit('userLocationUpdated', {
+                        email,
+                        location,
+                        isSharing
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to update user location:", err);
+            }
         }
     });
 });

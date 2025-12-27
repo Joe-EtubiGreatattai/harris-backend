@@ -86,7 +86,7 @@ router.get('/:email/orders', verifyAdmin, async (req, res) => {
 
 // Update Profile
 router.post('/profile', async (req, res) => {
-    const { email, phone, address, savedAddresses } = req.body;
+    const { email, phone, address, savedAddresses, isLocationSharing } = req.body;
     try {
         const user = await User.findOneAndUpdate(
             { email },
@@ -94,11 +94,22 @@ router.post('/profile', async (req, res) => {
                 phone,
                 address,
                 savedAddresses,
+                isLocationSharing,
                 lastSeen: new Date()
             },
             { upsert: true, new: true }
         );
         res.json(user);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Get users sharing location (Admin only)
+router.get('/active/sharing', verifyAdmin, async (req, res) => {
+    try {
+        const users = await User.find({ isLocationSharing: true });
+        res.json(users);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

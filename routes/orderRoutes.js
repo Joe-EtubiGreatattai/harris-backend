@@ -45,6 +45,19 @@ router.get('/', verifyAdmin, async (req, res) => {
     }
 });
 
+// Get Orders assigned to a specific Rider
+router.get('/rider/:riderId', async (req, res) => {
+    try {
+        const orders = await Order.find({
+            assignedRider: req.params.riderId,
+            status: { $in: ['Preparing', 'Ready for Delivery', 'Out for Delivery'] }
+        }).sort({ createdAt: -1 });
+        res.json(orders);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 // Update Order Status (Admin/Kitchen)
 router.patch('/:id/status', verifyAdmin, async (req, res) => {
     try {
