@@ -48,7 +48,13 @@ app.use('/api/admin/login', loginLimiter);
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: ["https://harris-frontend-kkg4.vercel.app", "http://localhost:5173", "http://192.168.0.130:5173"],
+        origin: [
+            "https://harris-frontend-kkg4.vercel.app",
+            "https://harris-pizza.vercel.app",
+            "http://localhost:5173",
+            "http://192.168.0.130:5173",
+            "http://127.0.0.1:5173"
+        ],
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
     }
 });
@@ -56,13 +62,22 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 4000;
 
 // Middleware
-const allowedOrigins = ["https://harris-frontend-kkg4.vercel.app", "http://localhost:5173", "http://192.168.0.130:5173"];
+const allowedOrigins = [
+    "https://harris-frontend-kkg4.vercel.app",
+    "https://harris-pizza.vercel.app",
+    "http://localhost:5173",
+    "http://192.168.0.130:5173",
+    "http://127.0.0.1:5173"
+];
+
 app.use(cors({
     origin: function (origin, callback) {
         // allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
+
         if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            console.log("Rejected Origin:", origin);
+            const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
             return callback(new Error(msg), false);
         }
         return callback(null, true);
