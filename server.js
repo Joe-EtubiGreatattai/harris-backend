@@ -53,7 +53,8 @@ const io = new Server(server, {
             "https://harris-pizza.vercel.app",
             "http://localhost:5173",
             "http://192.168.0.130:5173",
-            "http://127.0.0.1:5173"
+            "http://127.0.0.1:5173",
+            "http://192.168.0.127:5173"
         ],
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"]
     }
@@ -67,7 +68,8 @@ const allowedOrigins = [
     "https://harris-pizza.vercel.app",
     "http://localhost:5173",
     "http://192.168.0.130:5173",
-    "http://127.0.0.1:5173"
+    "http://127.0.0.1:5173",
+    "http://192.168.0.127:5173"
 ];
 
 app.use(cors({
@@ -227,6 +229,16 @@ io.on('connection', (socket) => {
             }
         }
     });
+
+    socket.on('callWaiter', (data) => {
+        const { table } = data;
+        if (table) {
+            console.log(`Table ${table} is calling a waiter.`);
+            // Broadcast to all connected clients (admins will filter/listen)
+            // Ideally we'd broadcast to an 'admin' room, but broadcasting to all works for now as only AdminPage listens
+            io.emit('waiterCalled', { table, time: new Date() });
+        }
+    });
 });
 
 // Routes
@@ -249,6 +261,7 @@ app.use('/api/ratings', require('./routes/ratingRoutes'));
 app.use('/api/promos', promoRoutes);
 app.use('/api/payouts', require('./routes/payoutRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/tables', require('./routes/tableRoutes'));
 
 
 app.get('/', (req, res) => {
