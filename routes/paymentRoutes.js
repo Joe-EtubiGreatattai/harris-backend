@@ -34,7 +34,7 @@ router.post('/initialize', async (req, res) => {
     const params = JSON.stringify({
         email: email,
         amount: Math.round(amount * 100), // Naira to Kobo (rounded for safety)
-        callback_url: "https://harris-backend.onrender.com/api/payment/callback", // Backend callback handler
+        callback_url: "https://harris-backend-ki9t.onrender.com/api/payment/callback", // Backend callback handler
         metadata: metadata
     });
 
