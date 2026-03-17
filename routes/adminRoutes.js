@@ -19,7 +19,7 @@ router.post('/login', (req, res) => {
 
     if (password === ADMIN_PASSWORD) {
         try {
-            const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
+            const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '12h' });
             return res.json({ success: true, token });
         } catch (error) {
             console.error('Error signing JWT:', error);

@@ -58,8 +58,18 @@ router.get('/rider/:riderId', async (req, res) => {
     }
 });
 
-// Update Order Status (Admin/Kitchen)
-router.patch('/:id/status', verifyAdmin, async (req, res) => {
+// Update Order Status (Admin/Kitchen/User)
+router.patch('/:id/status', async (req, res, next) => {
+    const { status, source } = req.body;
+
+    // If source is User and status is Delivered, skip verifyAdmin check
+    if (status === 'Delivered' && source === 'User') {
+        return next();
+    }
+
+    // Otherwise, require admin privileges
+    return verifyAdmin(req, res, next);
+}, async (req, res) => {
     try {
         const { status, source } = req.body;
         const updateData = { status };
